@@ -1,0 +1,471 @@
+//devmon.c
+#define _CRT_SECURE_NO_WARNINGS
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <Windows.h>
+
+#define NUM 3 // 개발몬 숫자
+
+typedef struct // 개발몬 정보
+{
+	char* name;
+	int iNum; //고유 번호(인덱스 넘버)
+	int hp, max_hp, mp, max_mp;
+	int power, sk_power;
+} DevMon;
+DevMon init_mon = { "0",-1, };
+DevMon devmon[NUM] = { {"이수빈",0,},{"박승범",1,} ,{"정광선",2,} };
+//매개변수 mon과 헷갈리지 않게 이름변경함
+
+typedef struct //유저 정보 저장
+{
+	char name[20];
+	char pre_pos; //유저 기존 위치 저장
+	int level, xp, hour;
+	int xpos, ypos; 
+	int total_hp, max_hp; 
+} UserInfo;
+UserInfo userS = { "",'0',1,0,0,0,0,0,0};
+DevMon user_mon[3] = { {"0",-1,},{"0",-1,} ,{"0",-1,} };
+
+//맵 구현
+char map[25][25] =
+{
+{'1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1'}, //1은 벽
+{'1', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', '1', '0', '0', '0', '1', 'd', 'd', 'd', 'd', 'd', '1'}, //0은 빈공간
+{'1', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', '1', '0', '0', '0', '1', 'd', 'd', 'd', 'd', 'd', '1'}, //c가 교실 - 생산
+{'1', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', '2', '0', '0', '0', '1', 'd', 'd', 'd', 'd', 'd', '1'}, //d가 교실 - 드론
+{'1', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', '1', '0', '0', '0', '1', 'd', 'd', 'd', 'd', 'd', '1'}, //e가 교실 - iot
+{'1', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', '1', '0', '0', '0', '1', 'd', 'd', 'd', 'd', 'd', '1'}, //h가 급식실
+{'1', '1', '1', '1', '1', '2', '1', '1', '1', '1', '1', '2', '1', '1', '1', '0', '0', '0', '2', 'd', 'd', 'd', 'd', 'd', '1'}, //p가 교수실
+{'1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', 'd', 'd', 'd', 'd', 'd', '1'}, //2이 일반문
+{'1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', 'd', 'd', 'd', 'd', 'd', '1'}, //3가 교수실 문
+{'1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', 'd', 'd', 'd', 'd', 'd', '1'}, //q가 구급차
+{'1', '1', '1', '1', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', 'd', 'd', 'd', 'd', 'd', '1'},
+{'1', 'h', 'h', 'h', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', 'd', 'd', 'd', 'd', 'd', '1'},
+{'1', 'h', 'q', 'h', '2', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '2', 'd', 'd', 'd', 'd', 'd', '1'},
+{'1', 'h', 'h', 'h', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', 'd', 'd', 'd', 'd', 'd', '1'},
+{'1', '1', '1', '1', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', '1', '1', '1', '1', '1', '1'},
+{'1', '0', '0', '0', '0', '0', '0', '1', '1', '2', '1', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1'},
+{'1', '0', '0', '0', '0', '0', '0', '1', 'e', 'e', 'e', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1'},
+{'1', '0', '0', '0', '0', '0', '0', '1', 'e', 'e', 'e', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1'},
+{'1', '0', '0', '0', '0', '0', '0', '1', 'e', 'e', 'e', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1'},
+{'1', '1', '1', '1', '2', '1', '1', '1', 'e', 'e', 'e', '1', '0', '0', '0', '0', '0', '0', '0', '1', '1', '1', '1', '1', '1'},
+{'1', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', '2', '0', '0', '0', '0', '0', '0', '0', '1', 'p', 'p', 'p', 'p', '1'},
+{'1', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', '1', '0', '0', '0', '0', '0', '0', '0', '1', 'p', 'p', 'p', 'p', '1'},
+{'1', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', '1', '0', '0', '0', '0', '0', '0', '0', '1', 'p', 'p', 'p', 'p', '1'},
+{'1', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', 'e', '1', '0', '0', '0', '0', '0', '0', '0', '3', 'p', 'p', 'p', 'p', '1'},
+{'1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1', '1'}
+};
+
+//맵 출력 함수
+void PrintingMap(void);
+
+//맵 이동 함수
+void Move(char* user);
+
+//랜덤 스폰 함수 -> 아이템 랜덤 스폰으로 이용해도 될 듯?
+void RandomSpawn(void);
+
+//리스폰 함수(죽으면 구급차로 스폰)
+void ReSpawn(void);
+
+//개발몬 수 세는 함수(배열 이름 입력받음)
+int CountMon(DevMon* mon);
+
+//팀 영입 함수(mon1->mon2) idx=mon1인덱스
+void AddTeam(DevMon* mon1, DevMon* mon2, int idx);
+
+//유저 hp정보 갱신
+void UpdateHp(void);
+
+//Hp 전체 회복 (배열 이름 입력 받음)
+void HealALLHp(DevMon* mon);
+
+//mon리스트의 idx번 멤버 amount만큼 회복
+void HealHp(DevMon* mon, int amount, int idx);
+
+//mon리스트의 idx번 개발몬 Hp amount 만큼 깎임
+void MinusHp(DevMon* mon, int idx, int amount);
+
+//mon리스트 전체 개발몬 Hp amount 만큼 깎일때
+void MinusALLHp(DevMon* mon, int amount);
+
+//개발몬 전투 함수
+//void BattleMon(void);
+
+//퀴즈단 지갑 털기 //수식 테스트
+void QuestionMon(int cnum); //클래스 위치 받기(생산: 0, 드론: 1, iot: 2)
+
+//mon 리스트 출력
+void PrintingMon(DevMon* mon);
+
+//개발몬 선택(mon 리스트에서 선택한 멤버의 인덱스 반환)
+int ChooseMon(DevMon* mon);
+
+//개발몬 초기 능력치 설정
+void init_play(void);
+
+
+int main(void)
+{
+    srand((unsigned int)time(NULL));
+    char user[2]; //유저 입력 인자
+    int idx, event; // 확률 변수
+
+    init_play();
+
+    printf("시작화면 \n");
+    printf("당신의 이름은? >");
+    scanf("%s", userS.name);
+    printf("%s님 환영합니다. \n", userS.name);
+    Sleep(1500);
+
+    idx = ChooseMon(devmon);
+    AddTeam(devmon, user_mon, idx);
+    printf("%s과 함께합니다. 개발원에 입장합니다. \n ", user_mon[0].name);
+    Sleep(1500);
+
+    RandomSpawn(); //임시
+    while (1)
+    {
+        system("cls");
+        PrintingMap(); //맵 출력
+
+        printf("위(w) 왼쪽(a) 아래(s) 오른쪽(d) >");
+        scanf("%s", user);
+        //입력값 검사
+        if (user[0] != 'w' && user[0] != 'a' && user[0] != 's' && user[0] != 'd') continue;
+        //플레이어 이동
+        Move(user); userS.hour++; event = rand() % 100;
+        printf("%d", event);
+
+        //복도, 길('0') 이벤트 (event가 0~29일때 발생)
+        if (userS.pre_pos == '0' && event < 30)
+        {
+            printf("배틀이 진행됩니다. \n");
+            //개발몬 만나 턴제 전투 실시
+            //battle_mon();
+            Sleep(1500);
+        }
+
+        //교실('c') 이벤트 (event가 0~19일때 발생) //퀴즈단 만나 퀴즈 풀기
+        else if (userS.pre_pos == 'c' && event < 20)
+        {
+            QuestionMon(0); //iot 교실 이벤트
+            Sleep(1500);
+        }
+        else if (userS.pre_pos == 'd' && event < 20)
+        {
+            QuestionMon(1); //드론 교실 이벤트
+            Sleep(1500);
+        }
+        else if (userS.pre_pos == 'e' && event < 20)
+        {
+            QuestionMon(2); //생산 교실 이벤트
+            Sleep(1500);
+        }
+
+        //급식실('h')
+        if (userS.pre_pos == 'q')
+        {
+            HealALLHp(user_mon);
+            Sleep(1500);
+        }
+
+        //교수실('p')
+        if (userS.pre_pos == 'q')
+        {
+            printf("교수실에 들어왔다! \n");
+            Sleep(1500);
+        }
+    }
+    return 0;
+}
+
+//맵 출력 함수
+void printing_map(void)
+{
+    int x = 0, y = 0;
+
+    printf("user:%s total_HP:%d Hour:%d Level:%d Xp:", userS.name, userS.total_hp,userS.hour,userS.level);
+    for (int i = 0;i < 10;i++) printf("ㅁ");
+
+    printf("\n");
+    for(x = 0; x < 25; x++)
+    {
+        for(y = 0; y < 25; y++)
+        {   
+            if (map[x][y] == '0')
+                printf("⬜ ");
+            else if (map[x][y] == '1')
+                printf("🧱 ");
+            else if (map[x][y] == '2')
+                printf("🚪 ");
+            else if (map[x][y] == '3')
+                printf("🔒 ");
+            else if (map[x][y] == 'c')
+                printf("🤖 ");
+            else if (map[x][y] == 'd')
+                printf("🛩️  ");
+            else if (map[x][y] == 'e')
+                printf("💻 ");
+            else if (map[x][y] == 'h')
+                printf("🏥 ");
+            else if (map[x][y] == 'p')
+                printf("👿 ");
+            else if (map[x][y] == 'q')
+                printf("🚑 ");
+            else if (map[x][y] == 'X')
+                printf("🫠  ");
+        }
+        printf("\n");
+    }
+}
+
+//맵 이동 함수
+void Move(char* user)
+{
+    map[userS.xpos][userS.ypos] = userS.pre_pos;
+    if (user[0] == 'w')
+    {
+        userS.xpos--;
+        if (map[userS.xpos][userS.ypos] == '1') userS.xpos++;
+    }
+    else if (user[0] == 'a')
+    {
+        userS.ypos--;
+        if (map[userS.xpos][userS.ypos] == '1') userS.ypos++;
+    }
+    else if (user[0] == 's')
+    {
+        userS.xpos++;
+        if (map[userS.xpos][userS.ypos] == '1') userS.xpos--;
+    }
+    else if (user[0] == 'd')
+    {
+        userS.ypos++;
+        if (map[userS.xpos][userS.ypos] == '1') userS.ypos--;
+        //교수실 입장 조건문
+        if (map[userS.xpos][userS.ypos] == '3' && userS.hour < 900) userS.ypos--;
+    }
+    userS.pre_pos = map[userS.xpos][userS.ypos];
+    map[userS.xpos][userS.ypos] = 'X';
+    /*map[userS.xpos][userS.ypos] = userS.pre_pos;
+    if (user[0] == 'w')
+        userS.xpos -= 1;
+    if (map[userS.xpos][userS.ypos] == '1')
+    {
+        userS.xpos += 1;
+        printf("벽은 뚫을 수 없습니다.");
+    }
+    else if (user[0] == 's')
+        userS.xpos += 1;
+    if (map[userS.xpos][userS.ypos] == '1')
+    {
+        userS.xpos -= 1;
+        printf("벽은 뚫을 수 없습니다.");
+    }
+    else if (user[0] == 'a')
+        userS.ypos -= 1;
+    if (map[userS.xpos][userS.ypos] == '1')
+    {
+        userS.ypos += 1;
+        printf("벽은 뚫을 수 없습니다.");
+    }
+    else if (user[0] == 'd')
+        userS.ypos += 1;
+    if (map[userS.xpos][userS.ypos] == '1')
+    {
+        userS.ypos -= 1;
+        printf("벽은 뚫을 수 없습니다.");
+    }
+    userS.pre_pos = map[userS.xpos][userS.ypos];
+    map[userS.xpos][userS.ypos] = 'X';*/
+}
+
+//랜덤 스폰 함수 -> 아이템 랜덤 스폰으로 이용해도 될 듯?
+void RandomSpawn(void)
+{
+    userS.xpos = rand() % 25; userS.ypos = rand() % 25;
+    while (map[userS.xpos][userS.ypos] != '0') //복도(길)에만 배치 되도록
+    {
+        userS.xpos = rand() % 25; userS.ypos = rand() % 25;
+    }
+    //userS.pre_pos = '0'; (삭제해도 될듯 위에서 초기화 함)
+    map[userS.xpos][userS.ypos] = 'X';
+}
+
+//리스폰 함수(죽으면 구급차로 스폰)
+void ReSpawn(void)
+{
+    userS.xpos = 12; userS.ypos = 2; //구급차 위치
+    map[userS.xpos][userS.ypos] = 'X';
+    HealALLHp(user_mon);//hp 전체 회복
+}
+
+//개발몬 수 세는 함수(배열 이름 입력받음)
+int CountMon(DevMon* mon)
+{
+    int idx = 0;
+    while(mon[idx].iNum==idx) idx++; //개발몬 수 세기
+    return idx;
+}
+
+//팀 영입 함수(mon1->mon2) idx=mon1인덱스
+void AddTeam(DevMon* mon1, DevMon* mon2, int idx)
+{
+    //mon1의 idx번째 멤버를 mon2에 추가
+    int uidx = CountMon(mon2); //mon2에 추가될 자리 인덱스
+
+    mon2[uidx] = mon1[idx]; //mon1의 idx번째 개발몬 정보 mon2에 복사
+    mon2[uidx].iNum = uidx; //고유번호 설정
+
+    //빠져나간 멤버 리스트에서 제거 ->배열 요소 제거 함수로 따로 구현해도 될듯!
+    for (int i = idx;i < CountMon(mon1) - 1;i++)
+    {
+        mon1[i] = mon1[i + 1];
+        mon1[i].iNum--;
+    }
+    mon1[NUM - 1] = init_mon; //빈자리 초기화
+
+    UpdateHp();
+}
+
+//유저 hp정보 갱신
+void UpdateHp(void)
+{
+    userS.total_hp = 0; userS.max_hp = 0;
+    for (int i = 0;i < CountMon(user_mon);i++)
+    {
+        userS.total_hp += user_mon[i].hp;
+        userS.max_hp += user_mon[i].max_hp;
+    }
+}
+
+//Hp 전체 회복 (배열 이름 입력 받음)
+void HealALLHp(DevMon* mon)
+{
+    for (int i = 0;i < CountMon(mon);i++) mon[i].hp = mon[i].max_hp;
+    if (mon == user_mon) userS.total_hp = userS.max_hp; //유저 개발몬일때 정보 갱신
+}
+
+//mon리스트의 idx번 멤버 amount만큼 회복
+void HealHp(DevMon* mon, int amount, int idx)
+{
+    mon[idx].hp += amount;
+    if (mon == user_mon) userS.total_hp += amount;
+}
+
+//mon리스트의 idx번 개발몬 Hp amount 만큼 깎임
+void MinusHp(DevMon* mon, int idx, int amount)
+{
+    mon[idx].hp -= amount;
+    if (mon == user_mon) userS.total_hp -= amount;
+}
+
+//mon리스트 전체 개발몬 Hp amount 만큼 깎일때
+void MinusALLHp(DevMon* mon, int amount)
+{
+    int idx = CountMon(mon);
+    for (int i = 0;i < idx;i++)
+    {
+        MinusHp(mon, i, amount);
+    }
+}
+
+//개발몬 전투 함수
+//void BattleMon(void);
+
+//퀴즈단 지갑 털기 //수식 테스트
+void QuestionMon(int cnum) //클래스 위치 받기(생산: 0, 드론: 1, iot: 2)
+{
+    //퀴즈단: iot-리북녘, 드론-최하문, 생산-류청걸
+    char* teacher[3] = { "류청걸","최하문","리북녘" };
+    //퀴즈 리스트- 최소 3개 필요, 정답도 함께 저장할 수 있는 2차원 배열 이용?
+    //산수 문제로!
+    int num1 = rand() % 100 + 1, num2 = rand() % 100 + 1;
+    int answer, qcount = 0;
+
+    printf("%s 교수님을 마주쳤다! \n", teacher[cnum]);
+
+    while (qcount < 3)
+    {
+        printf("%d번째 문제를 내겠다! \n", qcount + 1);
+        printf("%d + %d = ?\b", num1, num2);
+        scanf("%d", &answer);
+
+        //퀴즈 맞추면 하나당 경험치 획득
+        if (answer == num1 + num2)
+        {
+            printf("맞췄다!! \n");
+            userS.xp += 50; qcount++;
+            printf("경험치가 50만큼 올랐습니다. \n");
+            continue;
+        }
+        else //틀리면 hp -50%
+        {
+            printf("틀렸어!!! 공부 다시 하고 와!\n");
+            MinusALLHp(user_mon, (userS.total_hp * 0.5) / 3);
+            //userS.total_hp>0 이면 그냥 종료, ==0이면 급식실 리스폰(될수 없음)
+            return; //함수 종료(플레이어 위치 변화 없음)
+        }
+    }
+    //다 맞췄을 시 Hp회복, 
+    if (qcount == 3) HealALLHp(user_mon);
+}
+
+//mon 리스트 출력
+void PrintingMon(DevMon* mon)
+{
+    // 각 개발몬의 얼굴/이름/능력치 출력(임시: 이름과 능력치 리스트로 출력)
+    for (int i = 0;i < CountMon(mon);i++) //개발몬 리스트 출력
+    {
+        printf("%d)", i + 1);
+        printf("name: %s hp: %d mp: %d ", mon[i].name, mon[i].hp, mon[i].mp);
+        printf("power: %d sk_power: %d\n", mon[i].power, mon[i].sk_power);
+    }
+}
+
+//개발몬 선택(mon 리스트에서 선택한 멤버의 인덱스 반환)
+int ChooseMon(DevMon* mon)
+{
+    int choose = 0; //선택 트리거
+    char user[2];
+
+    while (choose != 1)
+    {
+        system("cls");
+        PrintingMon(mon);
+
+        // printf("'000'을 선택하시겠습니까?(y/n): "); //선택 여부 확인(임시: 해당 번호 입력 받음)
+        printf("선택하고 싶은 개발몬의 번호를 입력하세요: ");
+        scanf("%s", user); // y-> 해당 개발몬 정보 저장 / n-> 다음 개발몬 정보 출력 (나중에 추가)
+
+        //입력값 검사
+        if (user[0] > '0' && user[0] < '4') choose = 1;
+        else
+        {
+            printf("잘못된 입력입니다. 다시 선택해주세요. \n");
+            Sleep(500);
+            continue;
+        }
+
+        int idx = atoi(&user[0]) - 1; // 번호 int값으로 저장
+        return idx;
+    }
+}
+
+//개발몬 초기 능력치 설정
+void init_play(void)
+{
+    for (int i = 0;i < NUM;i++)
+    {
+        devmon[i].hp = rand() % 100 + 200; devmon[i].max_hp = devmon[i].hp; //최소 몇 최대 몇
+        devmon[i].mp = rand() % 50 + 50; devmon[i].max_mp = devmon[i].mp;
+        devmon[i].power = rand() % 10 + 10;
+        devmon[i].sk_power = rand() % 20 + 50;
+    }
+}

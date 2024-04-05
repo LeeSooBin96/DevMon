@@ -1,0 +1,53 @@
+#define NUM 3 //개발몬 숫자 //include 전처리문 아래 추가
+
+DevlopeMon init = { "0", }; //mon[] 선언 아래에 추가
+
+void MakeTeam(int idx, int uidx) //팀 영입 함수
+{
+    //플레이어의 개발몬 리스트에 추가
+    user_mon[uidx].name = mon[idx].name;
+    user_mon[uidx].hp = mon[idx].hp;
+    user_mon[uidx].mp = mon[idx].mp;
+    user_mon[uidx].power = mon[idx].power;
+    user_mon[uidx].sk_power = mon[idx].sk_power;
+
+    //개발몬 리스트에서 제거 ->배열 요소 제거 함수로 따로 구현해도 될듯!
+    for (int i = idx;i < NUM-1;i++)
+    {
+        mon[i] = mon[i + 1];
+    }
+    mon[NUM - 1] = init;
+
+
+    //플레이어 스텟 정보에 적용
+    userS.total_hp += mon[idx].hp;
+    userS.max_hp += mon[idx].hp;
+}
+
+//main에 추가
+ printf("시작화면 \n");
+ printf("당신의 이름은? >");
+ scanf("%s", userS.name);
+
+ //개발몬 선택 화면
+ while (choose != 1)
+ {
+     // 각 개발몬의 얼굴/이름/능력치 출력(임시: 이름과 능력치 리스트로 출력)
+     for (int i = 0;i < NUM;i++) //개발몬 리스트 출력
+     {
+         printf("%d)", i + 1);
+         printf("name: %s hp: %d mp: %d ", mon[i].name, mon[i].hp, mon[i].mp);
+         printf("power: %d sk_power: %d\n", mon[i].power, mon[i].sk_power);
+     }
+
+     // printf("'000'을 선택하시겠습니까?(y/n): "); //선택 여부 확인(임시: 해당 번호 입력 받음)
+     printf("선택하고 싶은 개발몬의 번호를 입력하세요: ");
+     scanf("%s", user); // y-> 해당 개발몬 정보 저장 / n-> 다음 개발몬 정보 출력 (나중에 추가)
+
+     //입력값 검사
+     if (user[0] > '0' && user[0] < '4') choose = 1;
+     else continue;
+
+     int idx = atoi(&user[0])-1; // 번호 int값으로 저장
+     MakeTeam(idx,0);
+ }

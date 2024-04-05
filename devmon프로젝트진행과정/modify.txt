@@ -1,0 +1,67 @@
+수정한 부분들
+
+//맵 출력 함수
+void PrintingMap(void)
+{
+    int x = 0, y = 0;
+
+    printf("-----------------------------------------------------------------\n");
+    printf("이름:%s 체력:%d 시간:%d 레벨:%d 경험치:", userS.name, userS.total_hp, userS.hour, userS.level);
+
+void PrintBoss(ImgList character) // 보스배틀시 보스 출력
+{
+    system("clear");
+    FILE* bossimg = NULL;
+    bossimg = fopen("txt/bossimg.txt", "r");
+    fread(character.imgarr, 1, 9999, boss);
+    printf("%s\n", character.imgarr);
+    fclose(bossimg);
+    printf("---------------------------------------------------------------------------------------------\n");
+    printf("(%s)%s 체력:%d/%d  마나:%d/%d  공격력:%d    ", userS.name, user_mon[selNum.selUser].name, user_mon[selNum.selUser].hp, user_mon[selNum.selUser].max_hp, user_mon[selNum.selUser].mp, user_mon[selNum.selUser].max_mp, user_mon[selNum.selUser].power);
+    printf("(Boss)%s 체력:%d/%d  마나:%d/%d  공격력:???\n", boss[0].name, boss[0].hp, boss[0].max_hp, boss[0].mp, boss[0].max_mp);
+    printf("---------------------------------------------------------------------------------------------\n");
+}
+
+void PrintBossUser(ImgList character, int iNum) // 보스배틀시 유저 출력
+{
+    system("clear");
+    PrintingImg(character, iNum);
+    printf("---------------------------------------------------------------------------------------------\n");
+    printf("(%s)%s 체력:%d/%d  마나:%d/%d  공격력:%d    ", userS.name, user_mon[selNum.selUser].name, user_mon[selNum.selUser].hp, user_mon[selNum.selUser].max_hp, user_mon[selNum.selUser].mp, user_mon[selNum.selUser].max_mp, user_mon[selNum.selUser].power);
+    printf("(Boss)%s 체력:%d/%d  마나:%d/%d  공격력:???\n", boss[0].name, boss[0].hp, boss[0].max_hp, boss[0].mp, boss[0].max_mp);
+    printf("---------------------------------------------------------------------------------------------\n");
+}
+
+else if (sel[0] == '2' && user_mon[selNum.selUser].mp >= 50)
+//mp 50일때도 사용될 수 있어야함
+
+boss[0].power = rand() % 1924 + 100; //100~2023
+
+event = rand() % CountMon(user_mon);
+while (user_mon[event].hp != 0) event = (event + 1) % CountMon(user_mon);
+selNum.selUser = event;
+//유저몬이 기껏해야 3마리인데 랜덤값이 같은 인덱스 반환하면 괜히 반복문횟수가 늘어나는것같아 수정
+
+ printf("(Boss)%s 체력:%d/%d  마나:%d/%d  공격력:???\n"
+
+printf("아이템 창이 꽉찼습니다. \n");
+map[userS.xpos][userS.ypos] = pos;
+if (map[userS.xpos - 1][userS.ypos] !='1')
+{
+    userS.xpos--;userS.pre_pos = map[userS.xpos][userS.ypos];map[userS.xpos][userS.ypos] = 'X';
+}
+else
+{
+    userS.xpos++; userS.pre_pos = map[userS.xpos][userS.ypos];map[userS.xpos][userS.ypos] = 'X';
+}
+
+
+
+확인할 것>
+fgets 쓸때 크기 웬만하면 변수 크기로 sizeof 사용 -fgets가 한문자 입력시 \n도 먹어줌!
+BossUserAttack 
+-clearbuffer() 중간에 왜 삽입?
+-quit = ItemUse(); // 이거 하면 무조건 밖으로 나옴 ....?? ItemUse(); break;해도 같은 결과 혹은 break대신 quit =0;
+반환형이 없는 함수를 변수에 넣으면 오류날수있음 사용하지 않는것이 좋음
+boss가 배열일 필요가 없음!...ㅠㅠ
+boss를 기존함수에 적용시킬수 있는 방법이 있음!
