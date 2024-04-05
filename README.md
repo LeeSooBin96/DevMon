@@ -4,4 +4,4 @@
 - 한 걸음당 1시간씩 증가된다.
 - 900시간이 지나면 보스방 문이 열린다.
 - 보스를 해치우면 게임 클리어, 종료된다.
-실행 영상 : https://youtu.be/srmQuxecMbQ
+- 실행 영상 : https://youtu.be/srmQuxecMbQ
